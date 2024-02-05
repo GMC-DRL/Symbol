@@ -25,27 +25,21 @@ def get_options(args=None):
     parser.add_argument('--lr_mode',default='big',choices=['big','small','decay','medium'], help='learning rate configuration')
     parser.add_argument('--fea_mode',default='full',choices=['full','no_fit','no_dis','no_opt','only_dis','only_opt','only_fit','xy'], help='feature selection')
     parser.add_argument('--tea_step',default='step',choices=['step','fes'], help='alignment mode of teacher and student optimizers')
-    # todo: delete gap_mode
+    
     parser.add_argument('--gap_mode',default='after',choices=['before','after'])
 
-    # todo: delete select
+    
     # teacher optimizer
-    # todo: whether to show all of teachers
     parser.add_argument('--teacher',default='madde',choices=['madde','cmaes','pso','de'])
 
-    # todo: delete cmaes sigma
 
     parser.add_argument('--train_set_num',default=20,help='num of problem in the training dataset')
     parser.add_argument('--test_set_num',default=8,help='num of problems in the testing datasset')
     parser.add_argument('--is_linux',default=False,help='for the usage of parallel environment, os should be known by program')     
     parser.add_argument('--require_baseline',default=True,help='whether to record the baseline data during training, baseline method is initial model without training')
 
-    # todo: delete dataset, default cec
-
-    # todo: delete problem
 
     # environment settings
-    # delete reward scale
     parser.add_argument('--population_size', type = int, default= 100,help='population size use in backbone algorithm')  # recommend 100
     
     parser.add_argument('--dim', type=int, default=10,help='dimension of the sovling problems')
@@ -75,14 +69,11 @@ def get_options(args=None):
     parser.add_argument('--lr',default=1e-3,help='learning rate')
 
     # regular settings
-    # todo: delete
-    # ! 保留notb， nosaving
     parser.add_argument('--no_cuda', action='store_true', help='disable GPUs')
     parser.add_argument('--no_tb', action='store_true', help='disable Tensorboard logging')
     parser.add_argument('--no_saving', action='store_true', help='disable saving checkpoints')
     parser.add_argument('--seed', type=int, default=1024, help='random seed to use')
 
-    # todo: delete model done?
 
     # Net parameters
     parser.add_argument('--v_range', type=float, default=6., help='to control the entropy')
@@ -134,12 +125,6 @@ def get_options(args=None):
 
     opts = parser.parse_args(args)
     
-    # opts.max_velocity=0.1*opts.max_x
-    
-    # opts.max_fes=opts.dim*20000
-    # figure out whether to use distributed training if needed (deprecated)
-    # opts.world_size = torch.cuda.device_count()
-    # opts.distributed = (torch.cuda.device_count() > 1) and (not opts.no_DDP)
     opts.world_size = 1
     opts.distributed = False
     os.environ['MASTER_ADDR'] = '127.0.0.1'
