@@ -43,7 +43,7 @@ class LSTM(nn.Module):
         pre_seq=[]
 
         # initial input,h,c for lstm
-        h_0=torch.zeros((self.num_layers,bs,self.hidden_size))
+        h_0=torch.zeros((self.num_layers,bs,self.hidden_size)).to(device)
         if self.opts.fea_mode=='xy':
             c_0=self.x_to_c(x)
             c_0=torch.mean(c_0,-2)
@@ -101,6 +101,7 @@ class LSTM(nn.Module):
                 # udpate
                 # need to test!!!!
                 x_in=x_in.clone().detach()
+                binary_code = binary_code.to(device)
                 for i in range(binary_code_len):
                     x_in[range(len(working_index)),0,position*binary_code_len+i]=binary_code[:,i]
                 
@@ -160,7 +161,7 @@ class LSTM(nn.Module):
 
                 w_index=working_index[i]
                 pos=position[i]
-                log_prob=get_choice(out,mask[i],fix_choice=seq[w_index,pos])
+                log_prob=get_choice(out,mask[i],fix_choice=seq[w_index,pos].to(device))
                 log_prob_whole[w_index]+=log_prob
 
                 c_index=c_indexs[i]

@@ -69,6 +69,7 @@ def get_choice(output,mask,fix_choice=None):
 def get_c(output,min_c,interval,fix_c=None):
     # output:(bs,1,output_size)
     output=output.squeeze(1)
+    device = output.device
     
     bs,output_size=output.size()
     # print(f'output.size:{output.shape}')
@@ -77,7 +78,7 @@ def get_c(output,min_c,interval,fix_c=None):
     policy=Categorical(prob)
     if fix_c is not None:
         choice=(fix_c-min_c)//interval
-        log_prob=policy.log_prob(choice)
+        log_prob=policy.log_prob(choice.to(device))
         return log_prob
     else:
         choice=policy.sample()
