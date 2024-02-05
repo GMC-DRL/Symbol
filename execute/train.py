@@ -1,24 +1,19 @@
-from model.rnn import rnn
 from model.critic import Critic
-from utils.logger import log_to_tb_train,gen_overall_tab,log_weight
+from utils.logger import log_to_tb_train
 from utils.utils import clip_grad_norms
 from .rollout import rollout
 from utils.utils import set_seed
-from dataset.generate_dataset import generate_dataset,make_dataset,construct_problem_set,sample_batch_task,get_test_set,get_train_set,sample_batch_task_cec21,get_train_set_cec21
+from dataset.generate_dataset import sample_batch_task_cec21,get_train_set_cec21
 from dataset.cec_test_func import *
 import numpy as np
 from .task import TaskForTrain
 from env import SubprocVectorEnv,DummyVectorEnv
-# from pbo_env.env import L2E_env
-# from pbo_env.glpso import GL_PSO
-# from pbo_env.madde import MadDE
-# from pbo_env.cmaes import sep_CMA_ES
-from pbo_env import L2E_env,GL_PSO,MadDE,sep_CMA_ES,PSO,DE,SRPSO
+
+from pbo_env import L2E_env,MadDE,sep_CMA_ES,PSO,DE
 from expr.tokenizer import MyTokenizer
 import torch
-import platform
 from tqdm import tqdm
-from utils.utils import torch_load_cpu, get_inner_model, get_init_cost, get_surrogate_gbest
+from utils.utils import torch_load_cpu, get_inner_model, get_surrogate_gbest
 import os
 
 class Data_Memory():
@@ -128,18 +123,12 @@ class trainer(object):
     def start_training(self,tb_logger):
         opts=self.opts
         
+        # parallel vector
         self.vector_env=SubprocVectorEnv if opts.is_linux else DummyVectorEnv
         
         # construct the dataset
-        if self.opts.dataset=='cec':
-            set_seed(42)
-            # train_set,train_pro_id,test_set,test_pro_id=generate_dataset(10,20,8)
-            train_set,train_pro_id=get_train_set_cec21(self.opts)
-        elif self.opts.dataset=='coco':
-            train_set,train_pro_id,test_set,test_pro_id=construct_problem_set(self.opts)
-        elif self.opts.dataset=='metaes':
-            train_set,train_pro_id=get_train_set(self.opts)
-            # test_set,test_pro_id=get_test_set(self.opts)
+        set_seed(42)
+        train_set,train_pro_id=get_train_set_cec21(self.opts)
         
         # construct parallel environment
         # learning_env
@@ -151,55 +140,20 @@ class trainer(object):
             
         elif self.opts.teacher=='cmaes':
             teacher_env_list=[lambda e=copy.deepcopy(train_set[0]): sep_CMA_ES(dim=opts.dim,problem=e,max_x=opts.max_x,min_x=opts.min_x,max_fes=opts.max_fes,sigma=opts.cmaes_sigma) for i in range(opts.batch_size)]
-        elif self.opts.teacher=='glpso':
-            teacher_env_list=[lambda e=copy.deepcopy(train_set[0]): GL_PSO(dim=opts.dim,max_fes=opts.tea_fes,problem=e,min_x=opts.min_x,max_x=opts.max_x,NP=opts.population_size) for i in range(opts.batch_size)]
         elif self.opts.teacher=='pso':
             teacher_env_list=[lambda e=None: PSO(ps=opts.population_size,dim=opts.dim,max_fes=opts.max_fes,min_x=opts.min_x,max_x=opts.max_x,pho=0.2) for i in range(opts.batch_size)]
         elif self.opts.teacher=='de':
             teacher_env_list=[lambda e=None: DE(dim=opts.dim,ps=opts.population_size,min_x=opts.min_x,max_x=opts.max_x,max_fes=opts.max_fes) for i in range(opts.batch_size)]
-        elif self.opts.teacher=='srpso':
-            teacher_env_list=[lambda e=None: SRPSO(dim=opts.dim,ps=opts.population_size,min_x=opts.min_x,max_x=opts.max_x,max_fes=opts.max_fes,max_velocity=0.1*(opts.max_x-opts.min_x)) for i in range(opts.batch_size)]
         else:
-            assert True, 'this teacher is currently not supported!!'
+            assert True, f'The selecting {self.opts.teacher} teacher is currently not supported!!'
         teacher_env=self.vector_env(teacher_env_list)
-        # random_env
+        # random_env (for comparison)
         random_env_list=[lambda e=train_set[0]: L2E_env(dim=opts.dim,ps=opts.population_size,problem=e,max_x=opts.max_x,min_x=opts.min_x,max_fes=opts.max_fes,boarder_method=opts.boarder_method) for i in range(opts.batch_size)]
         random_env=self.vector_env(random_env_list)
         
         # get surrogate gbest and init cost
-        # no matter which train mode, sgbest need to be calculated
         self.surrogate_gbest=get_surrogate_gbest(teacher_env,train_set,train_pro_id,opts.batch_size,seed=999,fes=opts.max_fes)
-        # print(f's_gbest:{self.surrogate_gbest}')
-        # surrogate_init_cost=get_init_cost(learning_env,train_set,opts.batch_size,seed=999)
-
-        # self.surrogate_gbest=np.random.rand(len(train_set))
-        # surrogate_init_cost=np.random.rand(len(train_set))
-
-        # test_set sgbest
-        # test_set_s_gbest=get_surrogate_gbest(teacher_env,test_set,opts.batch_size,seed=999,skip_step=opts.skip_step)
-        # test_set_s_gbest=np.random.rand(len(test_set))
-
-        # if opts.train_mode in ['3','5','6','7']:
-        #     surrogate_gbest=get_surrogate_gbest(teacher_env,train_set,opts.batch_size,seed=999,skip_step=opts.skip_step)
-        #     surrogate_init_cost=get_init_cost(learning_env,train_set,opts.batch_size,seed=999)
-        #     # surrogate_gbest=np.random.rand(len(train_set))
-        #     # surrogate_init_cost=np.random.rand(len(train_set))
-        # else:
-            # surrogate_gbest=np.random.rand(len(train_set))
-            # surrogate_init_cost=np.random.rand(len(train_set))
-
-        # teacher_env.close()
-
-        # if self.opts.teacher=='madde':
-        #     teacher_env_list=[lambda e=copy.deepcopy(train_set[0]): MadDE(dim=opts.dim,problem=e,max_x=opts.max_x,min_x=opts.min_x,max_fes=opts.tea_fes) for i in range(opts.batch_size)]
-            
-        # elif self.opts.teacher=='cmaes':
-        #     teacher_env_list=[lambda e=copy.deepcopy(train_set[0]): sep_CMA_ES(dim=opts.dim,problem=e,max_x=opts.max_x,min_x=opts.min_x,max_fes=opts.tea_fes,sigma=opts.cmaes_sigma) for i in range(opts.batch_size)]
-        # elif self.opts.teacher=='glpso':
-        #     teacher_env_list=[lambda e=copy.deepcopy(train_set[0]): GL_PSO(dim=opts.dim,max_fes=2*opts.tea_fes,problem=e) for i in range(opts.batch_size)]
         
-        # teacher_env=self.vector_env(teacher_env_list)
-
         task=TaskForTrain(learning_env,teacher_env,random_env,opts.batch_size,opts)
         tokenizer=MyTokenizer()
 
@@ -207,29 +161,14 @@ class trainer(object):
         #     test_ratio=rollout(opts,self,epoch,tb_logger,tokenizer,testing=True)
         update_step=0
 
-        outperform_ratio_list=[]
         test_ratio_list=[]
 
         epoch_len=18
-        # epoch_len=1
 
         # begin training 
         for epoch in range(opts.epoch_start,opts.epoch_end):
             self.lr_scheduler.step(epoch)
-            # shuffle
-            # set_seed()
-            # if self.opts.dataset=='cec':
-            #     rand_index=np.random.choice(len(train_set),size=(len(train_set),),replace=False)
-            #     train_set=train_set[rand_index]
-            #     train_pro_id=train_pro_id[rand_index]
-            #     surrogate_gbest=surrogate_gbest[rand_index]
-            #     surrogate_init_cost=surrogate_init_cost[rand_index]
-            # elif self.opts.dataset=='coco':
-            #     train_set.shuffle()
-            #     train_pro_id=train_pro_id[train_set.index]
-            #     surrogate_gbest=surrogate_gbest[train_set.index]
-            #     surrogate_init_cost=surrogate_init_cost[train_set.index]
-
+            
             self.set_training()
             # logging
             print('\n\n')
@@ -241,58 +180,25 @@ class trainer(object):
                         disable = opts.no_progress_bar, desc = 'training',
                         bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
             
-            epoch_outperform_time=0
 
             total_gap=0
             
-            # collect_dict={}
-
-            
-            # for one batch
-            # for bat_id,batch_pro in enumerate(train_set):
             for b in range(epoch_len):
-                batch_step,bat_outperform_time,bat_gap,data_memory=self.train_batch(task,update_step,tokenizer,pbar,epoch,tb_logger)
+                batch_step,bat_gap,data_memory=self.train_batch(task,update_step,tokenizer,pbar,epoch,tb_logger)
                 
-                # update surrogate gbest
-                # min_cost=min(np.min(data_memory.teacher_cost[-1]),np.min(data_memory.stu_cost[-1]))
-                # if min_cost<surrogate_gbest[bat_id]:
-                #     surrogate_gbest[bat_id]=min_cost
-                
-                # for recording table
-                # collect_dict[batch_pro.__class__.__name__]={}
-                # collect_dict[batch_pro.__class__.__name__]['teacher']={}
-                # collect_dict[batch_pro.__class__.__name__]['random_model']={}
-                # collect_dict[batch_pro.__class__.__name__]['student']={}
-                # collect_dict[batch_pro.__class__.__name__]['teacher']['mean']=np.mean(data_memory.teacher_cost[-1])
-                # collect_dict[batch_pro.__class__.__name__]['teacher']['std']=np.std(data_memory.teacher_cost[-1])
-                # collect_dict[batch_pro.__class__.__name__]['random_model']['mean']=np.mean(data_memory.baseline_cost[-1])
-                # collect_dict[batch_pro.__class__.__name__]['random_model']['std']=np.std(data_memory.baseline_cost[-1])
-                # collect_dict[batch_pro.__class__.__name__]['student']['mean']=np.mean(data_memory.stu_cost[-1])   
-                # collect_dict[batch_pro.__class__.__name__]['student']['std']=np.std(data_memory.stu_cost[-1])   
-
                 data_memory.clear()
 
                 update_step+=batch_step
                 total_gap+=bat_gap
-                epoch_outperform_time+=bat_outperform_time
 
-            # gen table
-            # path=os.path.join(self.opts.data_saving_dir,f'epoch_{epoch}','train')
-            # gen_overall_tab(collect_dict,path)
             
             avg_gap=total_gap/epoch_len
             pbar.close()
-            epoch_outperform_ratio=epoch_outperform_time/(opts.train_set_num * (opts.max_fes // opts.population_size // opts.skip_step)*opts.batch_size )
-            outperform_ratio_list.append(epoch_outperform_ratio)
             
-            # logging
-            tb_logger.add_scalar('performance/train_outperform_ratio',epoch_outperform_ratio,epoch)
-
             # save model
             if not opts.no_saving and (( opts.checkpoint_epochs != 0 and epoch % opts.checkpoint_epochs == 0) or \
                                        epoch == opts.epoch_end - 1): self.save(epoch)
             
-            # rollout
             # rollout
             if epoch%2==0:
                 test_ratio=rollout(opts,self,epoch,tb_logger,tokenizer)
@@ -305,31 +211,22 @@ class trainer(object):
                         best_test_epoch=epoch
                         
             if epoch == opts.epoch_start:
-                best_ratio=epoch_outperform_ratio
-                
-                best_train_epoch=opts.epoch_start
                 best_test_epoch=opts.epoch_start
                 best_avg_gap=avg_gap
                 best_gap_epoch=opts.epoch_start
             else:
-                if best_ratio<epoch_outperform_ratio:
-                    best_ratio=epoch_outperform_ratio
-                    best_train_epoch=epoch
                 if best_avg_gap>avg_gap:
                     best_avg_gap=avg_gap
                     best_gap_epoch=epoch
             
+            # todo: delete
             # log to screen
-            # print(f'train_ratio_list:{outperform_ratio_list}')
-            print(f'best_train_epoch:{best_train_epoch}')
-            print(f'best_train_ratio:{best_ratio}')
             # print(f'test_ratio_list:{test_ratio_list}')
             print(f'best_test_epoch:{best_test_epoch}')
             print(f'best_test_ratio:{best_test_ratio}')
             print(f'current_avg_gap:{avg_gap}')
             print(f'best_avg_gap:{best_avg_gap}')
             print(f'best_gap_epoch:{best_gap_epoch}')
-            log_weight(tb_logger,net=self.actor,epoch=epoch)
 
         # close the parallel vector_env
         learning_env.close()
@@ -337,26 +234,19 @@ class trainer(object):
         random_env.close()
 
 
-    # for one batch training
+    # training for one batch 
     def train_batch(self,task:TaskForTrain,pre_step,tokenizer,pbar,epoch,tb_logger=None):
         
         max_step=self.opts.max_fes//(self.opts.population_size*self.opts.skip_step)
         data_memory=Data_Memory()
         memory=Memory()
-        outperform_time=0
 
         # reset
         set_seed()
         
+        # sample task for training
+        instances,ids=sample_batch_task_cec21(self.opts)
 
-        # sample task
-        if self.opts.dataset=='coco':
-            instances,ids=sample_batch_task(self.opts)
-            
-        elif self.opts.dataset=='cec':
-            instances,ids=sample_batch_task_cec21(self.opts)
-            # print(f'ids:{ids}')
-            
         tea_pop,stu_population=task.reset(instances)
 
         baseline_pop=copy.deepcopy(stu_population)
@@ -409,8 +299,6 @@ class trainer(object):
                 target_pop,next_pop,baseline_pop,expr,is_done=task.step(stu_population,self.opts.skip_step,seq,const_seq,tokenizer,rand_seq,rand_c_seq,baseline_pop)
                 
                 # get reward
-                # total_reward,gap_reward,base_reward,gap=task.reward(next_pop,target_pop,self.opts.reward_func,self.opts.b_reward_func,max_step,s_init_cost,s_gbest)
-                # ! change: s_init_cost 变成了teacher init pop的gworst
                 total_reward,gap_reward,base_reward,gap=task.reward(learning_population=next_pop,target_population=target_pop,reward_method=self.opts.reward_func,
                                                                     base_reward_method=self.opts.b_reward_func,max_step=max_step,epoch=epoch,s_init_cost=init_cost,
                                                                     s_gbest=self.surrogate_gbest,pre_learning_population=pre_stu_pop,ids=ids)
@@ -449,10 +337,7 @@ class trainer(object):
                 total_baseline_reward,baseline_reward,baseline_base_reward,baseline_gap=task.reward(learning_population=baseline_pop,target_population=target_pop,reward_method=self.opts.reward_func,
                                                                     base_reward_method=self.opts.b_reward_func,max_step=max_step,epoch=epoch,s_init_cost=init_cost,
                                                                     s_gbest=self.surrogate_gbest,pre_learning_population=pre_baseline_pop,ids=ids)
-                # record outperform ratio from aspect of reward
-                outperform_time+=np.sum(total_reward.cpu().numpy()>total_baseline_reward)
-
-               
+                
 
                 # next step 
                 stu_population=next_pop
@@ -461,7 +346,7 @@ class trainer(object):
 
                 t=t+1
 
-                # 定位到下一个state
+                # next state
                 pop_feature = task.state(stu_population)
                 pop_feature=torch.FloatTensor(pop_feature).to(self.opts.device)
 
@@ -476,9 +361,9 @@ class trainer(object):
             t_time=t-t_s
             
 
-            # begin update
+            # begin updating network in PPO style
             old_actions = memory.actions
-            old_states = torch.stack(memory.states).detach() #.view(t_time, bs, ps, dim_f)
+            old_states = torch.stack(memory.states).detach() 
             old_logprobs = torch.stack(memory.logprobs).detach().view(-1)
 
             old_value = None
@@ -563,20 +448,10 @@ class trainer(object):
                 # logging to tensorboard
                 if (not self.opts.no_tb) and (tb_logger is not None):
                     if current_step % self.opts.log_step == 0:
-                        log_to_tb_train(tb_logger,self,Reward,grad_norms, memory.rewards,memory.gap_rewards,memory.b_rewards,gap,reinforce_loss,baseline_loss,log_prob,self.opts.show_figs,current_step)
+                        log_to_tb_train(tb_logger,self,Reward,grad_norms, memory.rewards,memory.gap_rewards,memory.b_rewards,gap,reinforce_loss,baseline_loss,log_prob,current_step)
                 pbar.update(1)
             memory.clear_memory()
 
-            
-        # save data
-        # path=os.path.join(self.opts.data_saving_dir,f'epoch_{epoch}','train')
-        # if not os.path.exists(path):
-        #     os.makedirs(path)
-        # np.save(os.path.join(path,f'batch_{bat_id}_pro{batch_pro_id}'),data_memory)
-
         
-        # data_memory.clear()
-
         # return batch step
-        return current_step-pre_step,outperform_time,total_gap/t,data_memory
-
+        return current_step-pre_step,total_gap/t,data_memory

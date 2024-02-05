@@ -56,7 +56,6 @@ def get_init_cost(env,dataset,bs,seed):
         action=[{'problem':copy.deepcopy(pro),'sgbest':0} for i in range(bs)]
         env.step(action)
         pop=env.reset()
-        # ! change 
         init_cost_list=[p.gworst_cost for p in pop]
         init_costs.append(np.max(init_cost_list))
     print('done...')
@@ -72,10 +71,9 @@ def get_surrogate_gbest(env,dataset,ids,bs,seed,fes):
         env.reset()
         is_done=False
         while not is_done:
-            action=[{'fes':fes,'select':True} for i in range(bs)]
+            action=[{'fes':fes} for i in range(bs)]
             pop,_,is_done,_=env.step(action)
             is_done=is_done.all()
-        # ! change 
         gbest_list=[p.gbest_cost for p in pop]
         gbests[id]=np.min(gbest_list)
     print('done...')

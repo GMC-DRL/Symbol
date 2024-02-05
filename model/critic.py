@@ -17,8 +17,6 @@ class Critic(nn.Module):
 
     # return baseline value detach & baseling value
     def forward(self,x):
-        # depend on diff
-        # x=x[:,:self.opts.fea_dim]
         if self.opts.fea_mode=='xy':
             baseline_val=self.value_net(x).mean(-2)
         else:

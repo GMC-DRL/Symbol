@@ -2,7 +2,6 @@ import numpy as np
 from cmaes import CMA, SepCMA
 from population.population import Population
 import gym
-from gym import spaces
 
 
 class sep_CMA_ES(gym.Env):
@@ -39,10 +38,9 @@ class sep_CMA_ES(gym.Env):
 
     def step(self,action):
         if action.get('problem') is not None:
-            # print('teacher change problem!!')
             self.problem=action['problem']
-            # self.population.problem=action['problem']
             return None,None,None,{}
+        
         if self.population.cur_fes>=self.max_fes:
             return self.population,0,self.population.cur_fes>=self.max_fes,{}
         

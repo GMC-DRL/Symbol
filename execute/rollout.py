@@ -3,22 +3,14 @@ import torch
 from utils.utils import set_seed
 from utils.logger import log_to_test_with_teacher,log_to_test_without_teacher,gen_overall_tab
 from .task import TaskForTrain
-# from pbo_env.env import L2E_env
-# from pbo_env.madde import MadDE
-# from pbo_env.cmaes import sep_CMA_ES
-# from pbo_env.glpso import GL_PSO
-from pbo_env import L2E_env,GL_PSO,MadDE,sep_CMA_ES,PSO,DE,SRPSO
+from pbo_env import L2E_env,MadDE,sep_CMA_ES,PSO,DE
 import os
 from tqdm import tqdm
 import copy
-from expr.tokenizer import MyTokenizer
-from dataset.generate_dataset import sample_batch_task_id,sample_batch_task_id_cec21
+from dataset.generate_dataset import sample_batch_task_id_cec21
 
 # inference for rollout
-test_ids={
-    'metaes':range(1,25),
-    'cec':range(1,11),
-    }
+
 
 class Memory():
     def __init__(self) -> None:
@@ -50,10 +42,8 @@ def rollout(opts,agent,epoch,tb_logger,tokenizer,testing=False):
     
     # for saving table
     collect_dict={}
-    # collect_dict['teacher']={}
-    # collect_dict['random_model']={}
-    # collect_dict['student']={}
-    test_id=test_ids.get(opts.dataset)
+    
+    test_id=range(1,11)
     with tqdm(range(len(test_id)),desc='rollout') as pbar:
         # learning_env
         learning_env_list=[lambda e=None: L2E_env(dim=opts.dim,ps=opts.population_size,problem=e,max_x=opts.max_x,min_x=opts.min_x,max_fes=opts.max_fes,boarder_method=opts.boarder_method) for i in range(opts.batch_size)]
@@ -64,14 +54,10 @@ def rollout(opts,agent,epoch,tb_logger,tokenizer,testing=False):
             
         elif opts.teacher=='cmaes':
             teacher_env_list=[lambda e=None: sep_CMA_ES(dim=opts.dim,problem=e,max_x=opts.max_x,min_x=opts.min_x,max_fes=opts.max_fes,sigma=opts.cmaes_sigma) for i in range(opts.batch_size)]
-        elif opts.teacher=='glpso':
-            teacher_env_list=[lambda e=None: GL_PSO(dim=opts.dim,max_fes=opts.max_fes,problem=e,min_x=opts.min_x,max_x=opts.max_x,NP=opts.population_size) for i in range(opts.batch_size)]
         elif opts.teacher=='pso':
             teacher_env_list=[lambda e=None: PSO(ps=opts.population_size,dim=opts.dim,max_fes=opts.max_fes,min_x=opts.min_x,max_x=opts.max_x,pho=0.2) for i in range(opts.batch_size)]
         elif opts.teacher=='de':
             teacher_env_list=[lambda e=None: DE(dim=opts.dim,ps=opts.population_size,min_x=opts.min_x,max_x=opts.max_x,max_fes=opts.max_fes) for i in range(opts.batch_size)]
-        elif opts.teacher=='srpso':
-            teacher_env_list=[lambda e=None: SRPSO(dim=opts.dim,ps=opts.population_size,min_x=opts.min_x,max_x=opts.max_x,max_fes=opts.max_fes,max_velocity=0.1*(opts.max_x-opts.min_x)) for i in range(opts.batch_size)]
         else:
             assert True, 'this teacher is currently not supported!!'
         teacher_env=agent.vector_env(teacher_env_list)
@@ -86,10 +72,7 @@ def rollout(opts,agent,epoch,tb_logger,tokenizer,testing=False):
         # for bat_id,batch_pro in enumerate(test_set):
         for bat_id,id in enumerate(test_id):
             # generate batch instances for testing
-            if opts.dataset=='metaes':
-                instances,p_name=sample_batch_task_id(dim=opts.dim,batch_size=opts.batch_size,f_id=id,seed=999)
-            elif opts.dataset=='cec':
-                instances,p_name=sample_batch_task_id_cec21(dim=opts.dim,batch_size=opts.batch_size,problem_id=id,seed=999)
+            instances,p_name=sample_batch_task_id_cec21(dim=opts.dim,batch_size=opts.batch_size,problem_id=id,seed=999)
 
                 
             # only need one way to imitate
@@ -97,11 +80,6 @@ def rollout(opts,agent,epoch,tb_logger,tokenizer,testing=False):
             # memory_no_teacher=rollout_no_teacher(opts,task,model,tokenizer,bat_id)
             test_outperform_time+=bat_outperform_time
 
-            # update surrogate gbest
-            # min_cost=min(np.min(memory_imitate.teacher_cost[-1]),np.min(memory_imitate.stu_cost[-1]))
-            # if min_cost<s_gbests[bat_id]:
-            #     s_gbests[bat_id]=min_cost
-                
             # for recording table
             collect_dict[f'F{id}']={}
             collect_dict[f'F{id}']['teacher']={}
@@ -169,10 +147,6 @@ def rollout_imitate(opts,task,agent,tokenizer,instances,testing):
     memory=Memory()
     set_seed(999)
     # reset environment
-    # instances=[copy.deepcopy(bat_pro) for i in range(opts.batch_size)]
-
-    
-
 
     if opts.teacher!='cmaes':
         tea_pop,stu_population=task.reset(instances,True)

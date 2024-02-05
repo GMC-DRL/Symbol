@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 
-from expr.tokenizer import MyTokenizer
 from expr.expression import *
 from torch.distributions import Categorical
 import numpy as np
@@ -47,18 +46,12 @@ def get_choice(output,mask,fix_choice=None):
     # output:(bs,1,output_size)
     bs,_,output_size=output.size()
     output=output.squeeze(1)
-    # mask=mask.squeeze()
-    # print(f'output:{output}')
-    # print(f'output.size:{output.shape}')
     
 
     # apply mask
     output[mask==0]=-math.inf
     # print(f'pre:{prob}')
     prob=torch.softmax(output,dim=-1)
-    # print(f'post:{prob}')
-    # print(f'prob:{prob}')
-    # print(f'mask:{mask[0]},prob:{prob[0]}')
 
     policy=Categorical(prob)
     if fix_choice is not None:
@@ -66,19 +59,9 @@ def get_choice(output,mask,fix_choice=None):
         log_prob=policy.log_prob(action)
         return log_prob
     else:
-        # print(mask.shape)
-        # mask_index=torch.nonzero(mask==0)
-        # print(mask_index.shape)
         action=policy.sample()
-        # while torch.any(mask[range(mask.shape[0]),action]==0):
-        #     print('error')
-        #     action=policy.sample()
     log_prob=policy.log_prob(action)
 
-
-    # get one_hot
-    # one_hot=torch.zeros_like(output)
-    # one_hot[range(bs),action[range(bs)]]=1
     # get binary code
     binary_code=get_binary(action)
     return log_prob,action,binary_code
@@ -86,6 +69,7 @@ def get_choice(output,mask,fix_choice=None):
 def get_c(output,min_c,interval,fix_c=None):
     # output:(bs,1,output_size)
     output=output.squeeze(1)
+    device = output.device
     
     bs,output_size=output.size()
     # print(f'output.size:{output.shape}')
@@ -94,7 +78,7 @@ def get_c(output,min_c,interval,fix_c=None):
     policy=Categorical(prob)
     if fix_c is not None:
         choice=(fix_c-min_c)//interval
-        log_prob=policy.log_prob(choice)
+        log_prob=policy.log_prob(choice.to(device))
         return log_prob
     else:
         choice=policy.sample()
