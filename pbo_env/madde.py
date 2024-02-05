@@ -3,7 +3,6 @@ from population.madde_population import MadDE_Population
 
 import numpy as np
 import gym
-from gym import spaces
 
 class MadDE(gym.Env):
     def __init__(self, dim,max_fes,problem,min_x,max_x):
@@ -17,22 +16,16 @@ class MadDE(gym.Env):
         self.__npm = 2
         self.__hm = 10
         self.__Nmin = 4
-        # self.__Nmax = self.__npm * self.__dim * self.__dim
-        self.__Nmax = 200
-        # self.__H = self.__hm * self.__dim
-        self.__H=100
+        self.__Nmax = self.__npm * self.__dim * self.__dim
+        # self.__Nmax = 200
+        self.__H = self.__hm * self.__dim
+        # self.__H=100
         self.__FEs = 0
         self.__MaxFEs = max_fes
         self.problem=problem
         self.min_x=min_x
         self.max_x=max_x
 
-        # self.bins=bins
-        # self.g=g
-        
-
-        # self.__n_logpoint = config.n_logpoint
-        # self.log_interval = config.log_interval
 
     def __ctb_w_arc(self, group, best, archive, Fs):
         NP, dim = group.shape
@@ -196,7 +189,6 @@ class MadDE(gym.Env):
 
         self.population=MadDE_Population(self.__dim,self.__NP,self.min_x,self.max_x,self.__MaxFEs,self.problem)
         self.population.reset()
-        self.hit_wall=0
         self.__FEs = self.__NP
         self.__archive = np.array([])
         self.__MF = np.ones(self.__H) * self.__F0
@@ -207,11 +199,9 @@ class MadDE(gym.Env):
 
 
     def step(self, action=None):
+        # switch problem instance
         if action.get('problem') is not None:
-            # print('teacher change problem!!')
             self.problem=action['problem']
-            # self.absolute_min_cost=action['sgbest']
-            # self.population.problem=action['problem']
             return None,None,None,{}
         
 
@@ -222,15 +212,11 @@ class MadDE(gym.Env):
             next_fes=self.population.cur_fes+step_fes
         else:
             assert True, 'action error!!'
-        select=action['select']
-        # if testing, same as before, if training, use same number of fes
-        # testing=action['testing']
+        
 
         step_end=False
         step=0
-        # skip_step=int(action)
-        # while self.population.cur_fes<next_fes and self.population.cur_fes<self.__MaxFEs:
-        # for sub_step in range(skip_step):
+        
         while not step_end:
             self.__sort()
             NP, dim = self.__NP, self.__dim
@@ -251,9 +237,6 @@ class MadDE(gym.Env):
             v[mu == 0] = v1
             v[mu == 1] = v2
             v[mu == 2] = v3
-            # update hit_wall
-            clip_filters=np.abs(v)>self.max_x
-            self.hit_wall+=np.sum(np.any(clip_filters,-1))
 
             v[v < self.min_x] = (v[v < self.min_x] + self.min_x) / 2
             v[v > self.max_x] = (v[v > self.max_x] + self.max_x) / 2
@@ -291,9 +274,7 @@ class MadDE(gym.Env):
             else:
                 self.__pm = np.ones(3) / 3
 
-
-
-            self.population.update2(u,ncost,filter_survive=select)
+            self.population.update2(u,ncost)
             
 
             self.__NP = int(np.round(self.__Nmax + (self.__Nmin - self.__Nmax) * self.__FEs / self.__MaxFEs))
@@ -314,7 +295,7 @@ class MadDE(gym.Env):
                     step_end=True
                     break
 
-        return self.population,0,self.__FEs>=self.__MaxFEs,{'hit_wall':self.hit_wall}
+        return self.population,0,self.__FEs>=self.__MaxFEs,{}
         
         
 

@@ -1,7 +1,7 @@
 from .population import Population
 import numpy as np
 
-
+'''population only for MadDE'''
 class MadDE_Population(Population):
     def __init__(self, dim, pop_size, min_x, max_x, max_fes, problem):
         super().__init__(dim, pop_size, min_x, max_x, max_fes, problem)
@@ -56,24 +56,18 @@ class MadDE_Population(Population):
             gworst_index=np.argmax(new_cost)
             self.gworst_position=next_position[gworst_index]
         
-        # dx 的计算不知道对不对
+        # deprecated
         self.dx=(self.c_cost-self.pre_cost)[:,None]/(self.current_position-self.pre_position+1e-5)
         self.dx=np.where(np.isnan(self.dx),np.zeros_like(self.current_position),self.dx)
 
-        # update h
-        # self.update_h()
 
-    def update2(self,next_position,new_cost,filter_survive=False):
+    def update2(self,next_position,new_cost):
         self.pre_cost=self.c_cost
         self.pre_position=self.current_position
         self.pre_gbest=self.gbest_cost
 
         self.before_select_pos=next_position
         
-        if filter_survive:
-            surv_filter=new_cost<=self.c_cost
-            next_position=np.where(surv_filter[:,None],next_position,self.current_position)
-            new_cost=np.where(surv_filter,new_cost,self.c_cost)
 
         filters = new_cost < self.pbest_cost
         new_cbest_val = np.min(new_cost)
@@ -104,23 +98,18 @@ class MadDE_Population(Population):
             gworst_index=np.argmax(new_cost)
             self.gworst_position=next_position[gworst_index]
         
-        # dx 的计算不知道对不对
         self.dx=(self.c_cost-self.pre_cost)[:,None]/(self.current_position-self.pre_position+1e-5)
         self.dx=np.where(np.isnan(self.dx),np.zeros_like(self.current_position),self.dx)
 
-        # update h
-        # self.update_h()
         
 
     def reset_order(self,index):
         self.current_position=self.current_position[index]
         self.c_cost=self.c_cost[index]
-        # self.gbest_index=index[self.gbest_index]
         self.dx=self.dx[index]
         self.pbest_cost=self.pbest_cost[index]
         self.pbest_position=self.pbest_position[index]
         self.index=self.index[index]
-        # self.gworst_index=index[self.gworst_index]
     
     def reset_popsize(self,NP):
         self.current_position=self.current_position[:NP]

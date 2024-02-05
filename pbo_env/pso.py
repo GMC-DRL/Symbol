@@ -23,18 +23,24 @@ class PSO(gym.Env):
     
     def step(self,action):
         if action.get('problem') is not None:
-            # print('change problem!!')
             self.problem=action['problem']
-            # self.absolute_min_cost=action['sgbest']
-            # self.population.problem=action['problem']
             return None,None,None,{}
         
         # skip_step=action['skip_step']
 
-        step_fes=action['fes']
-        next_fes=self.population.cur_fes+step_fes
 
-        while self.population.cur_fes<next_fes and self.population.cur_fes<self.max_fes:
+        if action.get('skip_step') is not None:
+            skip_step=action['skip_step']
+        elif action.get('fes') is not None:
+            step_fes=action['fes']
+            next_fes=self.population.cur_fes+step_fes
+        else:
+            assert True, 'action error!!'
+
+        step_end=False
+        step=0
+
+        while not step_end:
             x=self.population.current_position
             gbest=self.population.gbest_position
             pbest=self.population.pbest_position
@@ -42,5 +48,15 @@ class PSO(gym.Env):
             self.velocity=np.clip(self.velocity,-self.max_v,self.max_v)
             new_x=np.clip(x+self.velocity,self.min_x,self.max_x)
             self.population.update(new_x)
+
+            step+=1
+            if action.get('fes') is not None:
+                if self.population.cur_fes>=next_fes or self.population.cur_fes>=self.max_fes:
+                    step_end=True
+                    break
+            elif action.get('skip_step') is not None:
+                if step>=skip_step:
+                    step_end=True
+                    break
             
         return self.population,0,self.population.cur_fes>=self.max_fes,{}

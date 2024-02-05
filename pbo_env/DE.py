@@ -1,26 +1,12 @@
 import numpy as np
 from population.population import Population
 from utils.utils import set_seed
-'''implement the target env'''
 
-
-'''对于一个种群采用同一种更新方式'''
-'''best rand'''
-'''origin DE'''
-# 初步实现一个原始的de即可
-# 后续再利用一个task将两部分粘合在一起构成一个环境
-
-
-from asyncio import base_tasks
-from turtle import st
-# import torch
-import copy
 
 
 import numpy as np
 import gym
 from gym import spaces
-from scipy import integrate
 
 rand_seed=42
 reward_threshold=1e-7
@@ -50,22 +36,6 @@ class DE(gym.Env):
         r1 = np.random.randint(ps, size=NP)
         r2 = np.random.randint(ps,size=NP)
         r3 = np.random.randint(ps,size=NP)
-        # duplicate = np.where(r1 == np.arange(NP))[0]
-        # while duplicate.shape[0] > 0:
-        #     r1[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where(r1 == np.arange(NP))[0]
-
-        # r2 = np.random.randint(NP, size=NP)
-        # duplicate = np.where((r2 == np.arange(NP)) + (r2 == r1))[0]
-        # while duplicate.shape[0] > 0:
-        #     r2[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where((r2 == np.arange(NP)) + (r2 == r1))[0]
-
-        # r3 = np.random.randint(NP, size=NP)
-        # duplicate = np.where((r3 == np.arange(NP)) + (r3 == r1) + (r3 == r2))[0]
-        # while duplicate.shape[0] > 0:
-        #     r3[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where((r3 == np.arange(NP)) + (r3 == r1) + (r3 == r2))[0]
 
         x1 = self.population.current_position[r1]
         x2 = self.population.current_position[r2]
@@ -81,28 +51,6 @@ class DE(gym.Env):
         r2 = np.random.randint(ps, size=NP)
         r3 = np.random.randint(ps, size=NP)
         r4 = np.random.randint(ps, size=NP)
-        # duplicate = np.where(r1 == np.arange(NP))[0]
-        # while duplicate.shape[0] > 0:
-        #     r1[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where(r1 == np.arange(NP))[0]
-
-        # r2 = np.random.randint(NP, size=NP)
-        # duplicate = np.where((r2 == np.arange(NP)) + (r2 == r1))[0]
-        # while duplicate.shape[0] > 0:
-        #     r2[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where((r2 == np.arange(NP)) + (r2 == r1))[0]
-
-        # r3 = np.random.randint(NP, size=NP)
-        # duplicate = np.where((r3 == np.arange(NP)) + (r3 == r1) + (r3 == r2))[0]
-        # while duplicate.shape[0] > 0:
-        #     r3[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where((r3 == np.arange(NP)) + (r3 == r1) + (r3 == r2))[0]
-
-        # r4 = np.random.randint(NP, size=NP)
-        # duplicate = np.where((r4 == np.arange(NP)) + (r4 == r1) + (r4 == r2) + (r4 == r3))[0]
-        # while duplicate.shape[0] > 0:
-        #     r4[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where((r4 == np.arange(NP)) + (r4 == r1) + (r4 == r2) + (r4 == r3))[0]
 
         x1 = self.population.current_position[r1]
         x2 = self.population.current_position[r2]
@@ -119,22 +67,6 @@ class DE(gym.Env):
         r1 = np.random.randint(ps, size=NP)
         r2 = np.random.randint(ps,size=NP)
         r3 = np.random.randint(ps,size=NP)
-        # duplicate = np.where(r1 == np.arange(NP))[0]
-        # while duplicate.shape[0] > 0:
-        #     r1[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where(r1 == np.arange(NP))[0]
-
-        # r2 = np.random.randint(NP, size=NP)
-        # duplicate = np.where((r2 == np.arange(NP)) + (r2 == r1))[0]
-        # while duplicate.shape[0] > 0:
-        #     r2[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where((r2 == np.arange(NP)) + (r2 == r1))[0]
-
-        # r3 = np.random.randint(NP, size=NP)
-        # duplicate = np.where((r3 == np.arange(NP)) + (r3 == r1) + (r3 == r2))[0]
-        # while duplicate.shape[0] > 0:
-        #     r3[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where((r3 == np.arange(NP)) + (r3 == r1) + (r3 == r2))[0]
 
         x1 = self.population.current_position[r1]
         x2 = self.population.current_position[r2]
@@ -148,17 +80,6 @@ class DE(gym.Env):
         ps = self.ps
         r1 = np.random.randint(ps, size=NP)
         r2 = np.random.randint(ps,size=NP)
-        # r1 = np.random.randint(NP, size=NP)
-        # duplicate = np.where(r1 == np.arange(NP))[0]
-        # while duplicate.shape[0] > 0:
-        #     r1[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where(r1 == np.arange(NP))[0]
-
-        # r2 = np.random.randint(NP, size=NP)
-        # duplicate = np.where((r2 == np.arange(NP)) + (r2 == r1))[0]
-        # while duplicate.shape[0] > 0:
-        #     r2[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where((r2 == np.arange(NP)) + (r2 == r1))[0]
 
         x1 = self.population.current_position[r1]
         x2 = self.population.current_position[r2]
@@ -171,17 +92,6 @@ class DE(gym.Env):
         ps = self.ps
         r1 = np.random.randint(ps, size=NP)
         r2 = np.random.randint(ps,size=NP)
-        # r1 = np.random.randint(NP, size=NP)
-        # duplicate = np.where(r1 == np.arange(NP))[0]
-        # while duplicate.shape[0] > 0:
-        #     r1[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where(r1 == np.arange(NP))[0]
-
-        # r2 = np.random.randint(NP, size=NP)
-        # duplicate = np.where((r2 == np.arange(NP)) + (r2 == r1))[0]
-        # while duplicate.shape[0] > 0:
-        #     r2[duplicate] = np.random.randint(NP, size=duplicate.shape[0])
-        #     duplicate = np.where((r2 == np.arange(NP)) + (r2 == r1))[0]
 
         x1 = self.population.current_position[r1]
         x2 = self.population.current_position[r2]
@@ -211,21 +121,25 @@ class DE(gym.Env):
     
     def step(self, action=None):
         if action.get('problem') is not None:
-            # print('change problem!!')
             self.problem=action['problem']
-            # self.absolute_min_cost=action['sgbest']
-            # self.population.problem=action['problem']
             return None,None,None,{}
         
 
         # skip_step=action['skip_step']
 
-        step_fes=action['fes']
-        next_fes=self.population.cur_fes+step_fes
-        select=action['select']
+        if action.get('skip_step') is not None:
+            skip_step=action['skip_step']
+        elif action.get('fes') is not None:
+            step_fes=action['fes']
+            next_fes=self.population.cur_fes+step_fes
+        else:
+            assert True, 'action error!!'
 
-        while self.population.cur_fes<next_fes and self.population.cur_fes<self.max_fes:
-            
+        step_end=False
+        step=0
+
+        # while self.population.cur_fes<next_fes and self.population.cur_fes<self.max_fes:
+        while not step_end:
             old_pos=self.population.current_position
             
             trails=self.current2best(old_pos,0.9,0.9)
@@ -234,14 +148,22 @@ class DE(gym.Env):
             trails=np.clip(trails,self.min_x,self.max_x)
             
             # trails=np.where(r<=Cr[:,None],trails,old_pos)
-            self.population.update(trails,filter_survive=select)
-        
-        # print('return')
+            self.population.update(trails)
+
+            step+=1
+            if action.get('fes') is not None:
+                if self.population.cur_fes>=next_fes or self.population.cur_fes>=self.max_fes:
+                    step_end=True
+                    break
+            elif action.get('skip_step') is not None:
+                if step>=skip_step:
+                    step_end=True
+                    break
+                
         return self.population,0,self.population.cur_fes>=self.max_fes,{}
 
 
 # mutation startegy choices
-
 def best1(self, population, Fs):
     NP = population['current_position'].shape[0]
 
@@ -262,9 +184,6 @@ def best1(self, population, Fs):
     trail = population['gbest_pos'] + Fs * (x1 - x2)
 
     return trail
-
-
-
 
 
 def rand2(self, population, Fs):
@@ -308,9 +227,6 @@ def rand2(self, population, Fs):
     trail = x5 + Fs * (x1 - x2) + Fs * (x3 - x4)
 
     return trail
-
-
-
 
 
 def rand2best2(self, population, Fs):

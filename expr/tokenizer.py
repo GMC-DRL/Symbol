@@ -79,11 +79,6 @@ class MyTokenizer(Tokenizer):
         return self.vocab[expr]
     
     def encode(self, expr):
-        # encoded=[]
-        # for token in expr:
-        #     encoded.append(self.lookup_table[token])
-        # return encoded
-        # print(f'lookup_table:{self.lookup_table}')
         return self.lookup_table[expr]
     
     def is_consts(self, id):

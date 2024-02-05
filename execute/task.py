@@ -14,7 +14,6 @@ class TaskForTrain(object):
         self.bs=bs
         self.opts=opts
         self.train_mode=opts.train_mode
-        
     
     def reset(self,problem,testing=False):
         action=[{'problem':copy.deepcopy(problem[i])} for i in range(self.bs)]
@@ -45,12 +44,8 @@ class TaskForTrain(object):
     # modified: support different training mode
     def reward(self,learning_population,target_population,reward_method,base_reward_method,max_step,epoch,s_init_cost,s_gbest,pre_learning_population,ids):
         reward_func={
-            'gap_id':cal_gap_id,
-            'gap_div':cal_gap_nearest,
-            'gap_div5':cal_gap_nearest,
             'gap_near':cal_gap_nearest,
             'w':cal_wasserstein,
-            'gap_rank':cal_gap_rank,
         }
 
         base_reward_func={
@@ -78,16 +73,9 @@ class TaskForTrain(object):
             if self.train_mode == '1' or (self.train_mode == '4' and epoch<self.opts.epoch_end//2):
                 base_rewards.append(0)
                 dist=reward_func.get(reward_method)(p1,p2,self.opts.gap_mode)
-                if reward_method == 'gap_div':
-                    r=1/dist/max_step
-                    gap_rewards.append(r)
-                    # assert (1/dist-1)/max_step>=0,f'gap_div have error, reward:{(1/dist-1)/max_step},gap:{dist}'
-                elif reward_method == 'gap_div5':
-                    r=1/dist/max_step/5
-                    gap_rewards.append(r)
-                else:
-                    r=-dist/max_step
-                    gap_rewards.append(r)
+                
+                r=-dist/max_step
+                gap_rewards.append(r)
 
                 total_rewards.append(r)
                 gaps.append(dist)
@@ -102,23 +90,13 @@ class TaskForTrain(object):
                 if s_init_cost is not None:
                     b_reward=base_reward_func.get(base_reward_method)(p1,p2,p3,s_gbest[ids[i]],s_init_cost[i])/max_step
                     base_rewards.append(b_reward)
-                # if reward_method=='base' and (s_init_cost is not None):
-                #     base_rewards.append(base_reward(p1,s_gbest[ids[i]],s_init_cost)/max_step)
-                    
-                # elif reward_method=='gap_base' and (s_init_cost is not None):
-                #     base_rewards.append(base_reward(p1,s_gbest[ids[i]],s_init_cost)/max_step)
+                
                     
                 dist=reward_func.get(reward_method)(p1,p2,self.opts.gap_mode)
-                if reward_method == 'gap_div':
-                    r=1/dist/max_step
-                    gap_rewards.append(r)
-                    # assert (1/dist-1)/max_step>=0,f'gap_div have error, reward:{(1/dist-1)/max_step},gap:{dist}'
-                elif reward_method == 'gap_div5':
-                    r=1/dist/max_step/5
-                    gap_rewards.append(r)
-                else:
-                    r=-dist/max_step
-                    gap_rewards.append(r)
+                
+                r=-dist/max_step
+                gap_rewards.append(r)
+
                 if self.train_mode == '3':
                     total_rewards.append(r+b_reward)
                 elif self.train_mode == '7':
@@ -162,23 +140,12 @@ class TaskForTrain(object):
                 # b_reward=pure_opt_reward(p3,p1)-1
                 b_reward=neg_opt_reward(p1)/max_step
                 base_rewards.append(b_reward)
-                # if reward_method=='base' and (s_init_cost is not None):
-                #     base_rewards.append(base_reward(p1,s_gbest[ids[i]],s_init_cost)/max_step)
-                    
-                # elif reward_method=='gap_base' and (s_init_cost is not None):
-                #     base_rewards.append(base_reward(p1,s_gbest[ids[i]],s_init_cost)/max_step)
-                    
+                
                 dist=reward_func.get(reward_method)(p1,p2,self.opts.gap_mode)
-                if reward_method == 'gap_div':
-                    r=1/dist/max_step
-                    gap_rewards.append(r)
-                    # assert (1/dist-1)/max_step>=0,f'gap_div have error, reward:{(1/dist-1)/max_step},gap:{dist}'
-                elif reward_method == 'gap_div5':
-                    r=1/dist/max_step/5
-                    gap_rewards.append(r)
-                else:
-                    r=-dist/max_step
-                    gap_rewards.append(r)
+                
+                r=-dist/max_step
+                gap_rewards.append(r)
+
                 if self.train_mode == '8':
                     total_rewards.append(r+b_reward)
                 else:
@@ -215,44 +182,33 @@ class TaskForTrain(object):
                 assert success, 'fail to construct the update function'
                 rand_expr.append(rand_infix)
         
-        action=[{'base_population':copy.deepcopy(base_population[i]),'expr':expr[i],'skip_step':skip_step,'select':self.opts.stu_select} for i in range(len(base_population))]
+        action=[{'base_population':copy.deepcopy(base_population[i]),'expr':expr[i],'skip_step':skip_step} for i in range(len(base_population))]
         # learning_env step
         learning_population,_,is_done,_=self.learning_env.step(action)
         # print(learning_population[0].cur_fes)
         if not only_stu:
             # baseline_env step
-            action=[{'base_population':copy.deepcopy(baseline_pop[i]),'expr':rand_expr[i],'skip_step':skip_step,'select':self.opts.stu_select} for i in range(len(base_population))]
+            action=[{'base_population':copy.deepcopy(baseline_pop[i]),'expr':rand_expr[i],'skip_step':skip_step} for i in range(len(base_population))]
             baseline_population,_,_,_=self.baseline_env.step(action)
 
             # teacher_env step
-            tea_select=self.opts.tea_select
             if self.opts.tea_step == 'step':
                 if testing:
                     skip_step=int((self.opts.max_fes//self.opts.tea_fes)*skip_step)
-                    action=[{'skip_step':skip_step,'select':tea_select} for i in range(len(base_population))]
+                    action=[{'skip_step':skip_step} for i in range(len(base_population))]
                 else:
                     if self.opts.teacher=='glpso' and skip_step!=1:
                         skip_step=skip_step//2
-                    action=[{'skip_step':skip_step,'select':tea_select} for i in range(len(base_population))]
+                    action=[{'skip_step':skip_step} for i in range(len(base_population))]
             elif self.opts.tea_step == 'fes':
-                action=[{'fes':skip_step*self.opts.population_size,'select':tea_select} for i in range(self.bs)]
+                action=[{'fes':skip_step*self.opts.population_size} for i in range(self.bs)]
             teacher_population,_,_,_=self.teacher_env.step(action)
         else:
             teacher_population=None
             baseline_population=None
-        # print(teacher_population[0].current_position==learning_population[0].current_position)
-        # print(f'stepteacher:{teacher_population[0].current_position.shape}')
-        # print(f'stepstu:{learning_population[0].current_position.shape}')
+            
         return teacher_population,learning_population,baseline_population,expr,is_done.all()
 
-# ! change to max
-# def cal_gap(position1,position2,max_x):
-#     norm_p1=position1/max_x
-#     norm_p2=position2/max_x
-#     dim=position1.shape[1]
-#     max_dist=2*np.sqrt(dim)
-#     gap=np.max(np.sqrt(np.sum((norm_p1-norm_p2)**2,axis=-1)))
-#     return gap/max_dist
 
 def cal_gap_nearest(stu_pop,tea_pop,mode):
     max_x=stu_pop.max_x
@@ -271,27 +227,13 @@ def cal_gap_nearest(stu_pop,tea_pop,mode):
     dist=np.sqrt(np.sum((norm_p2-norm_p1)**2,-1))
     min_dist=np.min(dist,-1)
 
-    # ? max or mean
     gap=np.max(min_dist)
     dim=stu_position.shape[1]
     max_dist=2*np.sqrt(dim)
     return gap/max_dist
 
 
-'''base reward functions'''
-def base_reward(stu_pop,s_gbest,s_init_cost):
-    factor=10
-    # ! error
-    if stu_pop.gbest_cost<s_gbest:
-        r=(s_gbest-stu_pop.gbest_cost)/(s_init_cost-s_gbest)*factor
-        # r=(stu_pop.gbest_cost-s_gbest)/(s_init_cost-s_gbest)/factor
-    else:
-        r=-(stu_pop.gbest_cost-s_gbest)/(s_init_cost-s_gbest)
-    # ! change
-    # if r<-1:
-    #     print(r)
-    return r
-
+'''baseline reward functions'''
 # -tanh((sg-g)/(tg-g))
 def base_reward1(stu_pop,tea_pop,pre_stu_pop,s_gbest,s_init_cost):
     r=-np.tanh((stu_pop.gbest_cost-s_gbest)/(tea_pop.gbest_cost-s_gbest))
@@ -355,55 +297,7 @@ def neg_opt_reward(stu_pop):
     r=-(stu_pop.gbest_cost-stu_pop.problem.optimum)/(stu_pop.init_cost-stu_pop.problem.optimum)
     return r
 
-'''gap calculating function'''
-def cal_gap_id(stu_pop,tea_pop,mode):
-    if mode=='after':
-        stu_position=stu_pop.current_position
-        tea_position=tea_pop.current_position
-    elif mode=='before':
-        stu_position=stu_pop.before_select_pos
-        tea_position=tea_pop.before_select_pos
-    else:
-        assert True, 'gap mode is not supported!!'
-    max_x=stu_pop.max_x
-    stu_position=stu_pop.current_position
-    tea_position=tea_pop.current_position
-    index=tea_pop.index
-    
-    norm_p1=stu_position[index]/max_x
-    norm_p2=tea_position/max_x
-    dim=stu_position.shape[1]
-    max_dist=2*np.sqrt(dim)
-    gap=np.max(np.sqrt(np.sum((norm_p1-norm_p2)**2,axis=-1)))
-    return gap/max_dist
-
-
-def cal_gap_rank(stu_pop,tea_pop,mode):
-    if mode=='after':
-        stu_position=stu_pop.current_position
-        tea_position=tea_pop.current_position
-    elif mode=='before':
-        stu_position=stu_pop.before_select_pos
-        tea_position=tea_pop.before_select_pos
-    else:
-        assert True, 'gap mode is not supported!!'
-
-
-    dim=stu_position.shape[1]
-    max_dist=2*np.sqrt(dim)
-    max_x=stu_pop.max_x
-    norm_p1=stu_position/max_x
-    norm_p1=norm_p1[None,:,:]
-    norm_p2=tea_position/max_x
-    norm_p2=norm_p2[:,None,:]
-    dist=np.sqrt(np.sum((norm_p2-norm_p1)**2,-1))
-    min_dist=np.min(dist,-1)/max_dist
-    tea_cur_cost=tea_pop.c_cost
-    cost_rank=np.argsort(np.argsort(-tea_cur_cost))+1
-    gap=(min_dist*cost_rank)/np.sum(cost_rank)
-    # print(f'gap_rank:{np.sum(gap)}')
-    return np.sum(gap)
-
+'''gap calculating methods'''
 def cal_wasserstein(stu_pop,tea_pop,mode):
     if mode=='after':
         stu_position=stu_pop.current_position

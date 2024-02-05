@@ -5,33 +5,18 @@ from expr.expression import *
 from expr.tokenizer import MyTokenizer
 import re
 import copy
-
-
-'''实现一个gym类的env 接收expression作为step参数'''
-'''network control'''
-
-
 from utils.utils import set_seed
 import numpy as np
 import gym
 from gym import spaces
 from scipy import integrate
 
-rand_seed=42
-reward_threshold=1e-7
-# count=0
-# def replace(match):
-#     global count
-#     count += 1
-#     if count > 1:
-#         return pattern + str(count-1)
-#     else:
-#         return match.group()
+'''Working environment for SYMBOL'''
 
-# for figure out the randx problem
+# preprocess the randx operand
 class Myreplace(object):
     def __init__(self):
-        self.count = 0  # 类的属性
+        self.count = 0 
 
     def replace(self, match):
         self.count += 1
@@ -42,7 +27,7 @@ class Myreplace(object):
 
     def process_string(self, string, pattern):
         self.pattern=pattern
-        self.count = 0  # 重置计数
+        self.count = 0
         new_string = re.sub(pattern, self.replace, string)
         return new_string
 
@@ -75,8 +60,6 @@ class L2E_env(gym.Env):
         
         self.boarder_method=boarder_method
         
-        # self.bins=bins
-        # self.g=g
 
         self.action_space=spaces.Box(low=0,high=1,shape=(self.NP,))
         self.observation_space=spaces.Box(low=-np.inf,high=np.inf,shape=(self.NP,9))
@@ -87,13 +70,11 @@ class L2E_env(gym.Env):
     # the interface for environment reseting
     def reset(self):
         # self.NP=self.__Nmax
-        self.hit_wall=0
         self.population=Population(self.dim,self.NP,self.min_x,self.max_x,self.max_fes,self.problem)
         self.population.reset()
         return self.population
 
     def eval(self):
-        # set_seed(rand_seed)
         self.evaling=True
 
     def train(self):
@@ -122,31 +103,18 @@ class L2E_env(gym.Env):
 
     # input the base_population and expr function, return the population after applying expr function
     def step(self, action):
+        # change working problem instance
         if action.get('problem') is not None:
-            # print('change problem!!')
             self.problem=action['problem']
-            # self.absolute_min_cost=action['sgbest']
-            # self.population.problem=action['problem']
             return None,None,None,{}
         
         base_population=action['base_population']
         expr=action['expr']
         skip_step=action['skip_step']
-        select=action['select']
 
-        # record the pre gbest, used in feature 20
+        # record the previous gbest
         base_population.pre_gbest=base_population.gbest_cost
 
-        
-        # print(f'stu_problem:{base_population.problem.__str__()}')
-        
-        # update_function=expr_to_func(expr,self.tokenizer.variables)
-
-        
-        # print(f'inputs: {inputs}')
-        # print(f'variables:{variables}')
-        # print(f'randx')
-        # randx=yield_randx
         cnt_randx=expr.count('randx')
         pattern = 'randx'
         expr=self.replace.process_string(expr, pattern)
@@ -159,39 +127,25 @@ class L2E_env(gym.Env):
         update_function=expr_to_func(expr,variables)
 
         for sub_step in range(skip_step):
-            # self.__sort(base_population)
             x=base_population.current_position
             
             gb=base_population.gbest_position[None,:].repeat(self.NP,0)
             gw=base_population.gworst_position[None,:].repeat(self.NP,0)
-            # dx=base_population.dx
+
             dx=base_population.delta_x
             randx=x[np.random.randint(self.NP, size=self.NP)]
             
-            if not select:
-                pbest=base_population.pbest_position
-                # next_position=x+update_function(x,gb,gw,dx,randx,pbest)
-                # next_position=x+update_function(x,gb,pbest)
-            else:
-                pbest=self.get_random_pbest(base_population)
-                # next_position=x+update_function(x,gb,gw,dx,randx,pbest)
+            pbest=base_population.pbest_position
+            
             names = locals()
             inputs=[x,gb,gw,dx,randx,pbest]
             for i in range(1,count):
-                # exec('randx{} = {}'.format(i, x[np.random.randint(NP, size=NP)]))
                 names[f'randx{i}']=x[np.random.randint(self.NP, size=self.NP)]
                 inputs.append(eval(f'randx{i}'))
-                # next_position=x+update_function(x,gb,gw,dx,randx,pbest)
-            # print(f'x.shape:{x.shape},gb.shape:{gb.shape},gw.shape:{gw.shape},dx.shape:{dx.shape}')
             assert x.shape==gb.shape==gw.shape==dx.shape==randx.shape, 'not same shape'
             
             next_position=x+update_function(*inputs)
-            # change to x+\delta_x
             
-
-            # update hit_wall
-            clip_filters=np.abs(next_position)>self.max_x
-            self.hit_wall+=np.sum(np.any(clip_filters,-1))
             # boarder clip or what
             if self.boarder_method=="clipping":
                 next_position=np.clip(next_position,self.min_x,self.max_x)
@@ -199,10 +153,9 @@ class L2E_env(gym.Env):
                 next_position=self.min_x+(next_position-self.max_x)%(self.max_x-self.min_x)
             else:
                 raise AssertionError('this board method is not surported!')
-            # print(f'next_position:{next_position.shape}')
+            
             # update population
-            # self.update_population(next_position)
-            base_population.update(next_position,filter_survive=select)
+            base_population.update(next_position)
         
-        return base_population,0,base_population.cur_fes>=self.max_fes,{'hit_wall':self.hit_wall}
+        return base_population,0,base_population.cur_fes>=self.max_fes,{}
     

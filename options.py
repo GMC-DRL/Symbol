@@ -13,54 +13,52 @@ def get_options(args=None):
     parser.add_argument('--test',default=None,action='store_true', help='switch to inference mode')
     parser.add_argument('--run_name',default='test',help='name to identify the run')
     parser.add_argument('--load_path', default = None, help='path to load model parameters and optimizer state from')
-    parser.add_argument('--resume', default = None, help='resume from previous checkpoint file')
+    parser.add_argument('--resume_path', default = None, help='resume training from previous checkpoint file')
     
     parser.add_argument('--training_set',default='train',choices=['train','small','medium','large'])
 
+    # several train_mode
     # 1: imitation 2: pure optimization 3: imitation + breward 4: pre: imitation post: pure optimization 5: only breward 6: 分段imitation+breward 
     # 7: lamda imitation + breward 8: imitation + optimization 9 if else imitation + optimization 10 lamda 10: epoch lamda imitation + breward
-    parser.add_argument('--train_mode',choices=['1','2','3','4','5','6','7','8','9','10'])
+    parser.add_argument('--train_mode', default='3',choices=['1','2','3','4','5','6','7','8','9','10'], help='different training modes')
     parser.add_argument('--init_pop',default='uniform',choices=['best','harf','random','uniform'],help='how the init population is formed from teacher')
-    parser.add_argument('--lr_mode',default='big',choices=['big','small','decay','medium'])
-    parser.add_argument('--fea_mode',default='full',choices=['full','no_fit','no_dis','no_opt','only_dis','only_opt','only_fit','xy'])
-    parser.add_argument('--tea_step',default='step',choices=['step','fes'])
+    parser.add_argument('--lr_mode',default='big',choices=['big','small','decay','medium'], help='learning rate configuration')
+    parser.add_argument('--fea_mode',default='full',choices=['full','no_fit','no_dis','no_opt','only_dis','only_opt','only_fit','xy'], help='feature selection')
+    parser.add_argument('--tea_step',default='step',choices=['step','fes'], help='alignment mode of teacher and student optimizers')
+    # todo: delete gap_mode
     parser.add_argument('--gap_mode',default='after',choices=['before','after'])
 
+    # todo: delete select
+    # teacher optimizer
+    # todo: whether to show all of teachers
+    parser.add_argument('--teacher',default='madde',choices=['madde','cmaes','pso','de'])
 
-    parser.add_argument('--en_stu_select',action="store_true")
-    parser.add_argument('--no_tea_select',action="store_true")
-
-    # teacher
-    parser.add_argument('--teacher',default='madde',choices=['madde','cmaes','glpso','pso','de','srpso'])
-    parser.add_argument('--cmaes_sigma',type=float,default=2.0)
+    # todo: delete cmaes sigma
 
     parser.add_argument('--train_set_num',default=20,help='num of problem in the training dataset')
     parser.add_argument('--test_set_num',default=8,help='num of problems in the testing datasset')
     parser.add_argument('--is_linux',default=False,help='for the usage of parallel environment, os should be known by program')     
-    parser.add_argument('--require_baseline',default=True,help='whether to record the baseline data during training')
+    parser.add_argument('--require_baseline',default=True,help='whether to record the baseline data during training, baseline method is initial model without training')
 
-    parser.add_argument('--dataset',default='cec',choices=['coco','cec','metaes'])
-    parser.add_argument('--problem',default='bbob',choices=['bbob','bbob-noisy'])
-    parser.add_argument('--difficulty',default='easy',choices=['easy','difficult'])
+    # todo: delete dataset, default cec
+
+    # todo: delete problem
 
     # environment settings
-    parser.add_argument('--reward_scale', type = float, default= 100,help='reward=origin reward * reward_scale, make the reward bigger for easier training') 
+    # delete reward scale
     parser.add_argument('--population_size', type = int, default= 100,help='population size use in backbone algorithm')  # recommend 100
     
     parser.add_argument('--dim', type=int, default=10,help='dimension of the sovling problems')
-    parser.add_argument('--max_x',type=float,default=5,help='the upper bound of the searching range')
-    parser.add_argument('--min_x',type=float,default=-5,help='the lower bound of the searching range')
-    parser.add_argument('--boarder_method',default='clipping',choices=['clipping','random','periodic','reflect'])
-    parser.add_argument('--skip_step',default=5,type=int,help='apply the update function for skip_step')
-    parser.add_argument('--max_fes',type=int,default=50000,help='max fes to evaluate')
+    parser.add_argument('--max_x',type=float,default=100,help='the upper bound of the searching range')
+    parser.add_argument('--min_x',type=float,default=-100,help='the lower bound of the searching range')
+    parser.add_argument('--boarder_method',default='clipping',choices=['clipping','random','periodic','reflect'], help='boarding methods')
+    parser.add_argument('--skip_step',default=5,type=int,help='apply the update function every skip_step step of updating')
+    parser.add_argument('--max_fes',type=int,default=50000,help='max function evaluation times')
 
-    # parser.add_argument('--reward_stop',default=False)    # deprecated
-    parser.add_argument('--reward_func',default='gap_near',choices=['w','gap_near','gap_rank','gap_div','gap_div5'],help='several dist functions for comparison')
-    parser.add_argument('--b_reward_func',choices=['1','2','3','4','2div2','5','6','7','8','9','10'])
+    parser.add_argument('--reward_func',default='gap_near',choices=['w','gap_near'],help='several dist functions for comparison')
+    parser.add_argument('--b_reward_func', default='5', choices=['1','2','3','4','2div2','5','6','7','8','9','10'], help='different baseline reward selections')
     
     parser.add_argument('--fea_dim',type=int,default=9,help='dim of feature encoding( excluding those historical information)')
-    parser.add_argument('--bins',type=int,default=3,help='bins in historical histogram')
-    parser.add_argument('--g',type=int,default=5,help='how many past generation is accounted')
     
 
     # expr setting
@@ -76,18 +74,17 @@ def get_options(args=None):
     parser.add_argument('--num_layers',type=int,default=1,help='num of layers used in RNN')
     parser.add_argument('--lr',default=1e-3,help='learning rate')
 
-    # parameters in framework
+    # regular settings
+    # todo: delete
+    # ! 保留notb， nosaving
     parser.add_argument('--no_cuda', action='store_true', help='disable GPUs')
     parser.add_argument('--no_tb', action='store_true', help='disable Tensorboard logging')
-    parser.add_argument('--show_figs', action='store_true', help='enable figure logging')
     parser.add_argument('--no_saving', action='store_true', help='disable saving checkpoints')
-    parser.add_argument('--use_assert', action='store_true', help='enable assertion')
-    parser.add_argument('--no_DDP', action='store_true', help='disable distributed parallel')
     parser.add_argument('--seed', type=int, default=1024, help='random seed to use')
-    parser.add_argument('--model',default='lstm',choices=['rnn','lstm','rnn_new'],help='the model to control the expr')
 
+    # todo: delete model done?
 
-    # Net(Attention Aggragation) parameters
+    # Net parameters
     parser.add_argument('--v_range', type=float, default=6., help='to control the entropy')
     parser.add_argument('--encoder_head_num', type=int, default=4, help='head number of encoder')
     parser.add_argument('--decoder_head_num', type=int, default=4, help='head number of decoder')
@@ -149,22 +146,7 @@ def get_options(args=None):
     os.environ['MASTER_PORT'] = '4869'
 
 
-    if not opts.no_tea_select:
-        opts.tea_select=True
-    else:
-        opts.tea_select=False
     
-    if opts.en_stu_select:
-        opts.stu_select=True
-    else:
-        opts.stu_select=False
-
-    if opts.stu_select:
-        opts.fea_dim=7
-    else:
-        opts.fea_dim=9
-        
-
     if opts.teacher=='madde':
         opts.tea_fes=opts.max_fes/(opts.population_size//50)
     elif opts.teacher=='glpso':
@@ -183,17 +165,6 @@ def get_options(args=None):
     elif opts.fea_mode=='xy':
         opts.fea_dim=opts.dim+1
 
-
-    if opts.dataset=='cec':
-        opts.max_x=100
-        opts.min_x=-100
-    elif opts.dataset=='coco' or opts.dataset=='metaes':
-        opts.max_x=5
-        opts.min_x=-5
-    
-    # if opts.dataset=='metaes':
-    #     opts.epoch_end=150
-
     # figure out lr mode
     if opts.lr_mode=='small':
         opts.lr=1e-4
@@ -210,14 +181,12 @@ def get_options(args=None):
     elif opts.lr_mode=='decay':
         opts.lr=1e-3
         opts.lr_critic=1e-3
-        # opts.lr_decay=0.9772372209558107
         opts.lr_decay=pow((1e-4/1e-3),1/(opts.epoch_end))
     
-
     # processing settings
     opts.use_cuda = torch.cuda.is_available() and not opts.no_cuda
     opts.run_name = "{}_{}".format(opts.run_name,time.strftime("%Y%m%dT%H%M%S")) \
-        if not opts.resume else opts.resume.split('/')[-2]
+        if not opts.resume_path else opts.resume_path.split('/')[-2]
     opts.save_dir = os.path.join(
         opts.output_dir,
         opts.model,
