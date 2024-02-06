@@ -1,5 +1,7 @@
 # SYMBOL: Generating Flexible Black-Box Optimizers through Symbolic Equation Learning
-This is the python implementation of our paper "[Symbol: Generating Flexible Black-Box Optimizers Through Symbolic Equation Learning](https://openreview.net/forum?id=vLJcd43U7a)", which is accepted as a poster paper in ICLR 2024.
+[![ArXiv](https://img.shields.io/badge/arXiv-2402.02355-b31b1b.svg)](https://arxiv.org/abs/2402.02355)
+
+This is the python implementation of our paper "[Symbol: Generating Flexible Black-Box Optimizers Through Symbolic Equation Learning](https://arxiv.org/abs/2402.02355)", which is accepted as a poster paper in ICLR 2024.
 
 ![Animation](fig/animation.gif)
 
@@ -33,7 +35,6 @@ python run.py --test --load_path _path_to_checkpoint
 ```
 
 # Citing
-The PDF version of SYMBOL is available [here]().
 ```
 @inproceedings{symbol,
 author={Chen, Jiacheng and Ma, Zeyuan and Guo, Hongshu and Ma, Yining and Zhang, Jie and Gong, Yue-Jiao},
