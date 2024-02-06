@@ -34,7 +34,7 @@ For more adjustable configurations, please refer to `options.py`.
 python run.py --test --load_path _path_to_checkpoint
 ```
 
-# Citing
+## Citing
 ```
 @inproceedings{symbol,
 author={Chen, Jiacheng and Ma, Zeyuan and Guo, Hongshu and Ma, Yining and Zhang, Jie and Gong, Yue-Jiao},
