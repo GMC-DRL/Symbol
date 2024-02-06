@@ -12,12 +12,12 @@ cd SymBol
 ```
 
 ## Requirements
-* Platform preferences: Linux (for better parallelism)
+* Platform preferences: Linux (for better parallelism).
   Windows is also compatible, but the running speed will be slower due to the limit of the currently using parallel strategy.
 
 The dependencies of this project are listed in `requirements.txt`. You can install them using the following command.
 ```bash
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 ## Quick Start
