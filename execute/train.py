@@ -176,8 +176,7 @@ class trainer(object):
             print("Training with RNN lr={:.3e} for run {}".format(self.optimizer.param_groups[0]['lr'], opts.run_name) , flush=True)
             # start training
             epoch_step=epoch_len * (opts.max_fes // opts.population_size // opts.skip_step // opts.n_step) * opts.k_epoch
-            pbar = tqdm(total = epoch_step,
-                        disable = opts.no_progress_bar, desc = 'training',
+            pbar = tqdm(total = epoch_step, desc = 'training',
                         bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
             
 

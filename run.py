@@ -15,7 +15,7 @@ from options import get_options
 
 def run(opts):
     # only one mode can be specified in one time, test or train
-    assert opts.train==None or opts.test==None, 'Between train&test, only one mode can be given in one time'
+    assert (opts.train==None) ^ (opts.test==None), 'Between train&test, only one mode can be given in one time'
     
     sys=platform.system()
     opts.is_linux=True if sys == 'Linux' else False
@@ -26,7 +26,7 @@ def run(opts):
     # Optionally configure tensorboard
     tb_logger = None
     if not opts.no_tb:
-        tb_logger = SummaryWriter(os.path.join(opts.log_dir,opts.model, "{}D".format(opts.dim), opts.run_name))
+        tb_logger = SummaryWriter(os.path.join(opts.log_dir, "{}D".format(opts.dim), opts.run_name))
 
     if not opts.no_saving and not os.path.exists(opts.save_dir):
         os.makedirs(opts.save_dir)

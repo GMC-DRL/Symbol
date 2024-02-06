@@ -6,7 +6,7 @@ import torch
 
 def get_options(args=None):
 
-    parser = argparse.ArgumentParser(description="L2E")
+    parser = argparse.ArgumentParser(description="SYMBOL")
     
     # core setting
     parser.add_argument('--train',default=None,action='store_true',help='switch to train mode')
@@ -15,37 +15,23 @@ def get_options(args=None):
     parser.add_argument('--load_path', default = None, help='path to load model parameters and optimizer state from')
     parser.add_argument('--resume_path', default = None, help='resume training from previous checkpoint file')
     
-    parser.add_argument('--training_set',default='train',choices=['train','small','medium','large'])
-
+    
     # several train_mode
-    # 1: imitation 2: pure optimization 3: imitation + breward 4: pre: imitation post: pure optimization 5: only breward 6: 分段imitation+breward 
+    # 1: imitation 2: pure optimization 3: imitation + breward 4: pre: imitation post: pure optimization 5: only breward 6: section imitation+breward 
     # 7: lamda imitation + breward 8: imitation + optimization 9 if else imitation + optimization 10 lamda 10: epoch lamda imitation + breward
     parser.add_argument('--train_mode', default='3',choices=['1','2','3','4','5','6','7','8','9','10'], help='different training modes')
     parser.add_argument('--init_pop',default='uniform',choices=['best','harf','random','uniform'],help='how the init population is formed from teacher')
     parser.add_argument('--lr_mode',default='big',choices=['big','small','decay','medium'], help='learning rate configuration')
     parser.add_argument('--fea_mode',default='full',choices=['full','no_fit','no_dis','no_opt','only_dis','only_opt','only_fit','xy'], help='feature selection')
     parser.add_argument('--tea_step',default='step',choices=['step','fes'], help='alignment mode of teacher and student optimizers')
-    # todo: delete gap_mode
     parser.add_argument('--gap_mode',default='after',choices=['before','after'])
 
-    # todo: delete select
     # teacher optimizer
-    # todo: whether to show all of teachers
     parser.add_argument('--teacher',default='madde',choices=['madde','cmaes','pso','de'])
 
-    # todo: delete cmaes sigma
-
-    parser.add_argument('--train_set_num',default=20,help='num of problem in the training dataset')
-    parser.add_argument('--test_set_num',default=8,help='num of problems in the testing datasset')
-    parser.add_argument('--is_linux',default=False,help='for the usage of parallel environment, os should be known by program')     
-    parser.add_argument('--require_baseline',default=True,help='whether to record the baseline data during training, baseline method is initial model without training')
-
-    # todo: delete dataset, default cec
-
-    # todo: delete problem
+    
 
     # environment settings
-    # delete reward scale
     parser.add_argument('--population_size', type = int, default= 100,help='population size use in backbone algorithm')  # recommend 100
     
     parser.add_argument('--dim', type=int, default=10,help='dimension of the sovling problems')
@@ -75,14 +61,14 @@ def get_options(args=None):
     parser.add_argument('--lr',default=1e-3,help='learning rate')
 
     # regular settings
-    # todo: delete
-    # ! 保留notb， nosaving
     parser.add_argument('--no_cuda', action='store_true', help='disable GPUs')
     parser.add_argument('--no_tb', action='store_true', help='disable Tensorboard logging')
     parser.add_argument('--no_saving', action='store_true', help='disable saving checkpoints')
     parser.add_argument('--seed', type=int, default=1024, help='random seed to use')
 
-    # todo: delete model done?
+    # no need to config
+    parser.add_argument('--is_linux',default=False,help='for the usage of parallel environment, os should be known by program')     
+    parser.add_argument('--require_baseline',type=bool,default=True,help='whether to record the baseline data during training, baseline method is initial model without training')
 
     # Net parameters
     parser.add_argument('--v_range', type=float, default=6., help='to control the entropy')
@@ -125,7 +111,6 @@ def get_options(args=None):
     parser.add_argument('--per_eval_time',type=int,default=10,help='per problem eval n time')
 
     # logs/output settings
-    parser.add_argument('--no_progress_bar', action='store_true', help='disable progress bar')
     parser.add_argument('--log_dir', default='logs', help='directory to write TensorBoard information to')
     parser.add_argument('--log_step', type=int, default=50, help='log info every log_step gradient steps')
     parser.add_argument('--output_dir', default='outputs', help='directory to write output models to')
@@ -134,12 +119,6 @@ def get_options(args=None):
 
     opts = parser.parse_args(args)
     
-    # opts.max_velocity=0.1*opts.max_x
-    
-    # opts.max_fes=opts.dim*20000
-    # figure out whether to use distributed training if needed (deprecated)
-    # opts.world_size = torch.cuda.device_count()
-    # opts.distributed = (torch.cuda.device_count() > 1) and (not opts.no_DDP)
     opts.world_size = 1
     opts.distributed = False
     os.environ['MASTER_ADDR'] = '127.0.0.1'
@@ -189,13 +168,11 @@ def get_options(args=None):
         if not opts.resume_path else opts.resume_path.split('/')[-2]
     opts.save_dir = os.path.join(
         opts.output_dir,
-        opts.model,
         "{}D".format(opts.dim),
         opts.run_name
     ) if not opts.no_saving else None
     opts.data_saving_dir=os.path.join(
         opts.data_saving_dir,
-        opts.model,
         f'{opts.dim}D',
         opts.run_name
     ) if not opts.no_saving else None
