@@ -24,12 +24,12 @@ def get_options(args=None):
     parser.add_argument('--lr_mode',default='big',choices=['big','small','decay','medium'], help='learning rate configuration')
     parser.add_argument('--fea_mode',default='full',choices=['full','no_fit','no_dis','no_opt','only_dis','only_opt','only_fit','xy'], help='feature selection')
     parser.add_argument('--tea_step',default='step',choices=['step','fes'], help='alignment mode of teacher and student optimizers')
+
     parser.add_argument('--gap_mode',default='after',choices=['before','after'])
 
     # teacher optimizer
     parser.add_argument('--teacher',default='madde',choices=['madde','cmaes','pso','de'])
 
-    
 
     # environment settings
     parser.add_argument('--population_size', type = int, default= 100,help='population size use in backbone algorithm')  # recommend 100
@@ -69,6 +69,7 @@ def get_options(args=None):
     # no need to config
     parser.add_argument('--is_linux',default=False,help='for the usage of parallel environment, os should be known by program')     
     parser.add_argument('--require_baseline',type=bool,default=True,help='whether to record the baseline data during training, baseline method is initial model without training')
+
 
     # Net parameters
     parser.add_argument('--v_range', type=float, default=6., help='to control the entropy')
