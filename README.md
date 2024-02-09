@@ -1,7 +1,7 @@
 # SYMBOL: Generating Flexible Black-Box Optimizers through Symbolic Equation Learning
 [![ArXiv](https://img.shields.io/badge/arXiv-2402.02355-b31b1b.svg)](https://arxiv.org/abs/2402.02355)
 
-This is the python implementation of our paper "[Symbol: Generating Flexible Black-Box Optimizers Through Symbolic Equation Learning](https://arxiv.org/abs/2402.02355)", which is accepted as a poster paper in ICLR 2024.
+This is the python implementation of our paper "[Symbol: Generating Flexible Black-Box Optimizers Through Symbolic Equation Learning](https://arxiv.org/abs/2402.02355)", which is accepted as a poster paper in ICLR 2024. Our Symbol shows impressive balance between exploration and exploitation, which can be observed in the animation below (Ours in the left).
 
 ![Animation](fig/animation.gif)
 
