@@ -214,7 +214,7 @@ class MadDE(gym.Env):
             assert True, 'action error!!'
         
 
-        step_end=False
+        step_end=self.population.cur_fes>=self.__MaxFEs
         step=0
         
         while not step_end:
@@ -278,6 +278,7 @@ class MadDE(gym.Env):
             
 
             self.__NP = int(np.round(self.__Nmax + (self.__Nmin - self.__Nmax) * self.__FEs / self.__MaxFEs))
+            self.__NP = max(self.__NP, self.__Nmin)
             self.__NA = int(2.3 * self.__NP)
             self.__sort()
             

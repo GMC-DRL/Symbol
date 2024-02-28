@@ -136,7 +136,9 @@ class trainer(object):
         learning_env=self.vector_env(learning_env_list)
         # teacher_env
         if self.opts.teacher=='madde':
-            teacher_env_list=[lambda e=copy.deepcopy(train_set[0]): MadDE(dim=opts.dim,problem=e,max_x=opts.max_x,min_x=opts.min_x,max_fes=opts.max_fes) for i in range(opts.batch_size)]
+            if self.opts.tea_step == 'step':
+                madde_maxfes = round((opts.max_fes / opts.population_size) * (4 + 2 * opts.dim * opts.dim) / 2)
+            teacher_env_list=[lambda e=copy.deepcopy(train_set[0]): MadDE(dim=opts.dim,problem=e,max_x=opts.max_x,min_x=opts.min_x,max_fes=madde_maxfes) for i in range(opts.batch_size)]
             
         elif self.opts.teacher=='cmaes':
             teacher_env_list=[lambda e=copy.deepcopy(train_set[0]): sep_CMA_ES(dim=opts.dim,problem=e,max_x=opts.max_x,min_x=opts.min_x,max_fes=opts.max_fes,sigma=opts.cmaes_sigma) for i in range(opts.batch_size)]
