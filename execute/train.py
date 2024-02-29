@@ -138,6 +138,8 @@ class trainer(object):
         if self.opts.teacher=='madde':
             if self.opts.tea_step == 'step':
                 madde_maxfes = round((opts.max_fes / opts.population_size) * (4 + 2 * opts.dim * opts.dim) / 2)
+            else:
+                madde_maxfes = opts.max_fes
             teacher_env_list=[lambda e=copy.deepcopy(train_set[0]): MadDE(dim=opts.dim,problem=e,max_x=opts.max_x,min_x=opts.min_x,max_fes=madde_maxfes) for i in range(opts.batch_size)]
             
         elif self.opts.teacher=='cmaes':

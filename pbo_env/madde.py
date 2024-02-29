@@ -215,6 +215,8 @@ class MadDE(gym.Env):
         
 
         step_end=self.population.cur_fes>=self.__MaxFEs
+        if action.get('fes') is not None:
+            step_end = (step_end or (self.population.cur_fes>=next_fes))
         step=0
         
         while not step_end:
