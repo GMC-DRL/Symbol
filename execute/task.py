@@ -193,14 +193,14 @@ class TaskForTrain(object):
 
             # teacher_env step
             if self.opts.tea_step == 'step':
-                if testing:
-                    skip_step=int((self.opts.max_fes//self.opts.tea_fes)*skip_step)
-                    action=[{'skip_step':skip_step} for i in range(len(base_population))]
-                else:
-                    if self.opts.teacher=='glpso' and skip_step!=1:
-                        skip_step=skip_step//2
-                    action=[{'skip_step':skip_step} for i in range(len(base_population))]
-            elif self.opts.tea_step == 'fes':
+                # if testing:
+                #     skip_step=int((self.opts.max_fes//self.opts.tea_fes)*skip_step)
+                #     action=[{'skip_step':skip_step} for i in range(len(base_population))]
+                # else:
+                if self.opts.teacher=='glpso' and skip_step!=1:
+                    skip_step=skip_step//2
+                action=[{'skip_step':skip_step} for i in range(len(base_population))]
+            elif self.opts.tea_step == 'fes' or testing:
                 action=[{'fes':skip_step*self.opts.population_size} for i in range(self.bs)]
             teacher_population,_,_,_=self.teacher_env.step(action)
         else:
